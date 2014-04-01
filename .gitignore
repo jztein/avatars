@@ -1,1 +1,16 @@
 *~
+kristen/data/*
+*.plog
+*.plist
+*.svg
+*.png
+*.DS_Store
+*.d*
+*.o
+*.hmap
+*.jpg
+*.wmv
+*.mov
+*.LinkFileList
+
+
