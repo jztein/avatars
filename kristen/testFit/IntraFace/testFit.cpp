@@ -1,5 +1,6 @@
 //
-//  Fits SVG to face
+//  Deprecated approach:
+//  Fits SVG sample to face
 //  by Kristen Aw
 //
 //  Some INTRAFACE setup code taken from
@@ -8,6 +9,7 @@
 //  Copyright (c) 2013 IntraFace. All rights reserved.
 //
 
+/*
 #include <opencv2/core/core.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -241,7 +243,7 @@ int main()
     
 }
 
-
+*/
 
 
 
