@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "49AA4E251865018F00DA153C"
-               BuildableName = "IntraFace"
+               BuildableName = "roughFace"
                BlueprintName = "roughFace"
                ReferencedContainer = "container:roughFace.xcodeproj">
             </BuildableReference>
@@ -33,7 +33,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "49AA4E251865018F00DA153C"
-            BuildableName = "IntraFace"
+            BuildableName = "roughFace"
             BlueprintName = "roughFace"
             ReferencedContainer = "container:roughFace.xcodeproj">
          </BuildableReference>
@@ -52,7 +52,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "49AA4E251865018F00DA153C"
-            BuildableName = "IntraFace"
+            BuildableName = "roughFace"
             BlueprintName = "roughFace"
             ReferencedContainer = "container:roughFace.xcodeproj">
          </BuildableReference>
@@ -70,7 +70,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "49AA4E251865018F00DA153C"
-            BuildableName = "IntraFace"
+            BuildableName = "roughFace"
             BlueprintName = "roughFace"
             ReferencedContainer = "container:roughFace.xcodeproj">
          </BuildableReference>

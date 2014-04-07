@@ -133,7 +133,7 @@ void drawFeatures(Point realCenter, struct Rough& r, ofstream& svgFile)
         cy = r.pointsY[i] + shiftY;
         
         // intraface markers scaled to svg canvas
-        svgFile << "<circle style='fill:#ff0000' cx='" << cx << "' cy='" << cy << "' r='3' />\n";
+        //svgFile << "<circle style='fill:#000000' cx='" << cx << "' cy='" << cy << "' r='3' />\n";
         
         r.pointsX[i] = cx;
         r.pointsY[i] = cy;
@@ -148,9 +148,18 @@ void drawFeatures(Point realCenter, struct Rough& r, ofstream& svgFile)
     // right eyebrow
     drawEyebrow(r, 5, 10, svgFile);
     
+    // nose
+    drawNose(r, 14, 19, svgFile);
+    
+    // left eye
+    drawEyes(r, 20, 21, 24, 26, 27, 30, svgFile);
+    
+    drawMouth(r, 31, 37, 44, 47, svgFile);
+    
+    drawFace(r, 11, svgFile);
     
     // see things
-    drawEyebrow(r, 10, 19, svgFile);
+    //drawEyebrow(r, 10, 19, svgFile);
 }
 
 void drawEyebrow(struct Rough r, int start, int end, ofstream& svgFile)
@@ -163,8 +172,96 @@ void drawEyebrow(struct Rough r, int start, int end, ofstream& svgFile)
     svgFile << "' fill='transparent' stroke='black' />\n";
 }
 
+// curve refers to bottom of nose
+void drawNose(struct Rough r, int curveStart, int curveEnd, ofstream& svgFile)
+{    
+    // mark nose sides y point
+    // this is approximately between the two points before curve
+    // CHECK this assumption:
+    int midx, midy;
+    midx = (r.pointsX[curveStart - 1] + r.pointsX[curveStart - 2]) / 2;
+    midy = r.pointsY[curveStart - 1];//(r.pointsY[curveStart - 1] + r.pointsY[curveStart - 2]) / 2;
+    //svgFile << "<circle style='fill:#0000ff' cx='" << midx << "' cy='" << midy << "' r='3' />\n";
+    
+    int rightx = r.pointsX[curveEnd - 1] + (r.pointsX[curveEnd - 1] - r.pointsX[curveEnd - 2]);
+    int right2x = rightx + (r.pointsX[curveEnd - 1] - r.pointsX[curveEnd - 2]);
+    int leftx = r.pointsX[curveStart] - (r.pointsX[curveStart + 1] - r.pointsX[curveStart]);
+    int left2x = leftx - (r.pointsX[curveStart + 1] - r.pointsX[curveStart]);
+    
+    int lowery = r.pointsY[(curveStart + curveEnd) / 2] - ((midy - r.pointsY[(curveStart + curveEnd) / 2])/2);
+    
+    svgFile << "<path d='M" << leftx << " " << midy << " ";
+    svgFile << "C " << left2x << " " << lowery << ", " << right2x << " " << lowery << ", " << rightx << " " << midy;
+    svgFile << "' fill='transparent' stroke='black' />\n";
+    
+    // draw curve + control points
+    svgFile << "<circle style='fill:#0000ff' cx='" << leftx << "' cy='" << midy << "' r='3' />\n";
+    svgFile << "<circle style='fill:#0000ff' cx='" << left2x << "' cy='" << lowery << "' r='3' />\n";
+    svgFile << "<circle style='fill:#0000ff' cx='" << right2x << "' cy='" << lowery << "' r='3' />\n";
+    svgFile << "<circle style='fill:#0000ff' cx='" << rightx << "' cy='" << midy << "' r='3' />\n";
+    
+}
 
+// top left, top right, bottom right, bottom left
+//
+//  0      1
+//
+//   *    *
+// *   O    *
+//   *    *
+//
+//  4      3
+void drawEyes(struct Rough r, int left_tl, int left_tr, int left_bl, int right_tl, int right_tr, int right_bl, ofstream& svgFile)
+{
+    int leftx = (r.pointsX[left_tl] + r.pointsX[left_tr]) / 2;
+    int rightx = (r.pointsX[right_tl] + r.pointsX[right_tr]) / 2;
+    int y = (((r.pointsY[left_tl] + r.pointsY[left_bl]) / 2) + ((r.pointsY[right_tl] + r.pointsY[right_bl]) / 2)) / 2;
+    
+    svgFile << "<circle style='fill:#330055' cx='" << leftx << "' cy='" << y << "' r='7' /> \n";
+    svgFile << "<circle style='fill:#330055' cx='" << rightx << "' cy='" << y << "' r='7' /> \n";
+}
 
+void drawMouth(struct Rough r, int leftCorner, int rightCorner, int upperMiddle, int lowerMiddle, ofstream& svgFile)
+{
+    // upper middle lip
+    svgFile << "<circle style='fill:#ffff00' cx='" << r.pointsX[upperMiddle] << "' cy='" << r.pointsY[upperMiddle] << "' r='3' />\n";
+    // lower middle lip
+    svgFile << "<circle style='fill:#ffff00' cx='" << r.pointsX[lowerMiddle] << "' cy='" << r.pointsY[lowerMiddle] << "' r='3' />\n";
+    // left lip corner
+    svgFile << "<circle style='fill:#ffff00' cx='" << r.pointsX[leftCorner] << "' cy='" << r.pointsY[leftCorner] << "' r='3' />\n";
+    // right lip corner
+    svgFile << "<circle style='fill:#ffff00' cx='" << r.pointsX[rightCorner] << "' cy='" << r.pointsY[rightCorner] << "' r='3' />\n";
+    
+    // upper lip
+    svgFile << "<path d='M" << r.pointsX[leftCorner] << " " << r.pointsY[leftCorner] << " ";
+    svgFile << "L " << r.pointsX[upperMiddle] << " " << r.pointsY[upperMiddle] << ", " << r.pointsX[rightCorner] << " " << r.pointsY[rightCorner];
+    svgFile << "' fill='transparent' stroke='red' /> \n";
+
+    // lower lip
+    svgFile << "<path d='M" << r.pointsX[leftCorner] << " " << r.pointsY[leftCorner] << " ";
+    svgFile << "L " << r.pointsX[lowerMiddle] << " " << r.pointsY[lowerMiddle] << ", " << r.pointsX[rightCorner] << " " << r.pointsY[rightCorner];
+    svgFile << "' fill='transparent' stroke='red' /> \n";
+
+    
+}
+
+void drawFace(struct Rough r, int mid, ofstream& svgFile)
+{
+    int vertRad;
+    int horzRad;
+    // top of nose: 10
+    // bot of nose: 13
+    vertRad = 2.4*(r.pointsY[13] - r.pointsY[10]);
+    horzRad = (r.pointsX[9] - r.pointsX[13]) * 1.4;
+    
+    svgFile << "<circle style='fill:#ff00ff' cx='" << r.pointsX[13] << "' cy='" << r.pointsY[13] << "' r='3' />\n";
+    svgFile << "<circle style='fill:#cc00cc' cx='" << r.pointsX[10] << "' cy='" << r.pointsY[10] << "' r='3' />\n";
+    svgFile << "<circle style='fill:#990099' cx='" << r.pointsX[9] << "' cy='" << r.pointsY[9] << "' r='3' />\n";
+    svgFile << "<circle style='fill:#550055' cx='" << r.pointsX[0] << "' cy='" << r.pointsY[0] << "' r='3' />\n";
+    
+    svgFile << "<ellipse style='opacity:0.3;fill:#ee9955' cx='" << r.pointsX[11] << "' cy='" << r.pointsY[11] << "' ";
+    svgFile << "ry='" << vertRad << "' rx='" << horzRad << "'/> \n";
+}
 
 
 

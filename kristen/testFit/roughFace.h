@@ -48,6 +48,10 @@ Point drawMarkers(Mat intrafaceMarkers, struct Rough& r, float cFactor);
 void drawFeatures(Point realCenter, struct Rough& r, ofstream& svgFile);
 
 void drawEyebrow(struct Rough r, int start, int end, ofstream& svgFile);
+void drawNose(struct Rough r, int curveStart, int curveEnd, ofstream& svgFile);
+void drawEyes(struct Rough r, int left_tl, int left_tr, int left_bl, int right_tl, int right_tr, int right_bl, ofstream& svgFile);
+void drawMouth(struct Rough r, int leftCorner, int rightCorner, int upperMiddle, int lowerMiddle, ofstream& svgFile);
+void drawFace(struct Rough r, int mid, ofstream& svgFile);
 
 #endif /* defined(__IntraFace__roughFace__) */
 
