@@ -16,6 +16,12 @@
 		7B7C8F6A18E5B77400045A50 /* libopencv_objdetect.2.4.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B7C8F6618E5B77400045A50 /* libopencv_objdetect.2.4.5.dylib */; };
 		7B7C8F7318EE510A00045A50 /* roughFace.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B7C8F7118EE510A00045A50 /* roughFace.cpp */; };
 		7B7C8F7618EE52B400045A50 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B7C8F7418EE52B400045A50 /* utils.cpp */; };
+		7B8F702818F9B27500609591 /* noseFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B8F702618F9B27500609591 /* noseFinder.cpp */; };
+		7B8F702B18F9DAE800609591 /* libopencv_features2d.2.4.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B8F702918F9DAE800609591 /* libopencv_features2d.2.4.5.dylib */; };
+		7B8F702C18F9DAE800609591 /* libopencv_nonfree.2.4.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B8F702A18F9DAE800609591 /* libopencv_nonfree.2.4.5.dylib */; };
+		7B8F703418F9F44D00609591 /* libopencv_calib3d.2.4.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B8F703118F9F44D00609591 /* libopencv_calib3d.2.4.5.dylib */; };
+		7B8F703518F9F44D00609591 /* libopencv_flann.2.4.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B8F703218F9F44D00609591 /* libopencv_flann.2.4.5.dylib */; };
+		7B8F703618F9F44D00609591 /* libopencv_stitching.2.4.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B8F703318F9F44D00609591 /* libopencv_stitching.2.4.5.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -59,6 +65,13 @@
 		7B7C8F7218EE510A00045A50 /* roughFace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = roughFace.h; sourceTree = "<group>"; };
 		7B7C8F7418EE52B400045A50 /* utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
 		7B7C8F7518EE52B400045A50 /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
+		7B8F702618F9B27500609591 /* noseFinder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = noseFinder.cpp; sourceTree = "<group>"; };
+		7B8F702718F9B27500609591 /* noseFinder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = noseFinder.h; sourceTree = "<group>"; };
+		7B8F702918F9DAE800609591 /* libopencv_features2d.2.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libopencv_features2d.2.4.5.dylib; sourceTree = "<group>"; };
+		7B8F702A18F9DAE800609591 /* libopencv_nonfree.2.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libopencv_nonfree.2.4.5.dylib; sourceTree = "<group>"; };
+		7B8F703118F9F44D00609591 /* libopencv_calib3d.2.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_calib3d.2.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/2.4.5/lib/libopencv_calib3d.2.4.5.dylib; sourceTree = "<group>"; };
+		7B8F703218F9F44D00609591 /* libopencv_flann.2.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_flann.2.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/2.4.5/lib/libopencv_flann.2.4.5.dylib; sourceTree = "<group>"; };
+		7B8F703318F9F44D00609591 /* libopencv_stitching.2.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_stitching.2.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/2.4.5/lib/libopencv_stitching.2.4.5.dylib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +85,11 @@
 				7B7C8F6A18E5B77400045A50 /* libopencv_objdetect.2.4.5.dylib in Frameworks */,
 				7B7C8F5618E45C8B00045A50 /* libc++.dylib in Frameworks */,
 				49BB68FE18A43D0700E0965E /* libIntraFaceFFDT.dylib in Frameworks */,
+				7B8F702B18F9DAE800609591 /* libopencv_features2d.2.4.5.dylib in Frameworks */,
+				7B8F702C18F9DAE800609591 /* libopencv_nonfree.2.4.5.dylib in Frameworks */,
+				7B8F703418F9F44D00609591 /* libopencv_calib3d.2.4.5.dylib in Frameworks */,
+				7B8F703518F9F44D00609591 /* libopencv_flann.2.4.5.dylib in Frameworks */,
+				7B8F703618F9F44D00609591 /* libopencv_stitching.2.4.5.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -81,6 +99,8 @@
 		49AA4E1D1865018F00DA153C = {
 			isa = PBXGroup;
 			children = (
+				7B8F702618F9B27500609591 /* noseFinder.cpp */,
+				7B8F702718F9B27500609591 /* noseFinder.h */,
 				7B7C8F7418EE52B400045A50 /* utils.cpp */,
 				7B7C8F7518EE52B400045A50 /* utils.h */,
 				7B7C8F7118EE510A00045A50 /* roughFace.cpp */,
@@ -159,6 +179,11 @@
 		7B7C8F6E18E5B8C500045A50 /* libs */ = {
 			isa = PBXGroup;
 			children = (
+				7B8F703118F9F44D00609591 /* libopencv_calib3d.2.4.5.dylib */,
+				7B8F703218F9F44D00609591 /* libopencv_flann.2.4.5.dylib */,
+				7B8F703318F9F44D00609591 /* libopencv_stitching.2.4.5.dylib */,
+				7B8F702918F9DAE800609591 /* libopencv_features2d.2.4.5.dylib */,
+				7B8F702A18F9DAE800609591 /* libopencv_nonfree.2.4.5.dylib */,
 				7B7C8F6318E5B77400045A50 /* libopencv_core.2.4.5.dylib */,
 				7B7C8F6418E5B77400045A50 /* libopencv_highgui.2.4.5.dylib */,
 				7B7C8F6518E5B77400045A50 /* libopencv_imgproc.2.4.5.dylib */,
@@ -222,6 +247,7 @@
 				49AA4E2A1865018F00DA153C /* testFit.cpp in Sources */,
 				7B7C8F7318EE510A00045A50 /* roughFace.cpp in Sources */,
 				7B7C8F7618EE52B400045A50 /* utils.cpp in Sources */,
+				7B8F702818F9B27500609591 /* noseFinder.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -317,7 +343,10 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = /usr/local/Cellar/opencv/2.4.5/include;
-				LIBRARY_SEARCH_PATHS = /usr/local/Cellar/opencv/2.4.5/lib;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/Cellar/opencv/2.4.5/lib,
+					"\"$(SRCROOT)\"",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = roughFace;
@@ -333,7 +362,10 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = /usr/local/Cellar/opencv/2.4.5/include;
-				LIBRARY_SEARCH_PATHS = /usr/local/Cellar/opencv/2.4.5/lib;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/Cellar/opencv/2.4.5/lib,
+					"\"$(SRCROOT)\"",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = roughFace;

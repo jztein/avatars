@@ -6,6 +6,7 @@
 
 #include "roughFace.h"
 #include "utils.h"
+#include "noseFinder.h"
 
 //
 //  Some INTRAFACE setup code adapted from
@@ -20,6 +21,7 @@ bool compareRect(Rect r1, Rect r2) { return r1.height < r2.height; }
 
 int main(int argc, char** argv)
 {
+    //FlannBasedMatcher m;
     struct Rough r;
     
     while (parseArgs(argc-1, argv+1, r))
@@ -50,7 +52,7 @@ int main(int argc, char** argv)
     
     cascadeClassifier.detectMultiScale(r.testImage, faces, 1.2, 2, 0, Size(50, 50));
     
-    ofstream svgFile("rough1.html");
+    ofstream svgFile("rough2.html");
     initSVG(svgFile);
     
     Point realCenter;
@@ -59,6 +61,7 @@ int main(int argc, char** argv)
     float notFaceScore = 0.5;
     if (faceAligner->Detect(r.testImage, faces[0], intrafaceMarkers, score) == INTRAFACE::IF_OK)
     {
+        r.intrafaceMarkers = intrafaceMarkers;
         if (score >= notFaceScore) {
             realCenter = drawMarkers(intrafaceMarkers, r, cFactor);
         }
@@ -158,8 +161,33 @@ void drawFeatures(Point realCenter, struct Rough& r, ofstream& svgFile)
     
     drawFace(r, 11, svgFile);
     
+    Mat croppedToNose = cropNose(r);
+    NoseFinder nf(croppedToNose);
+    nf.findNoseShape();
+    
     // see things
     //drawEyebrow(r, 10, 19, svgFile);
+}
+
+Mat cropNose(struct Rough &r)
+{
+    int x0, y0, x1, y1;
+    x0 = (int)r.intrafaceMarkers.at<float>(0,3);
+    y0 = (int)r.intrafaceMarkers.at<float>(1,3);
+    x1 = (int)r.intrafaceMarkers.at<float>(0,37) - x0;
+    y1 = (int)r.intrafaceMarkers.at<float>(1,37) - y0;
+    
+    cout << "##:\n" << x0 << "," << y0 << " || " << x1 << "," << y1 << endl;
+    cout << "Bluhfesht: " << r.testImage.cols << "," << r.testImage.rows << endl;
+    
+    Rect roi(x0, y0, x1, y1);
+    
+    Mat croppedIm = r.testImage(roi);
+    imshow("hello cropped!", croppedIm);
+    //imwrite("cropped1.jpg", croppedIm);
+    waitKey(0);
+    return croppedIm;
+    
 }
 
 void drawEyebrow(struct Rough r, int start, int end, ofstream& svgFile)
@@ -324,7 +352,7 @@ Point drawMarkers(Mat intrafaceMarkers, struct Rough& r, float cFactor)
         cx = (int)intrafaceMarkers.at<float>(0,k);
         cy = (int)intrafaceMarkers.at<float>(1,k);
         
-        circle(r.testImage, Point(cx, cy), 2, Scalar(B,G,R), -1);
+        ////// circle(r.testImage, Point(cx, cy), 2, Scalar(B,G,R), -1);
         cx = int(float(cx) * cFactor);
         cy = int(float(cy) * cFactor);
         
@@ -340,8 +368,15 @@ Point drawMarkers(Mat intrafaceMarkers, struct Rough& r, float cFactor)
     
     imwrite(NAME_SEE_MARKERS, r.testImage);
     
+    //Rect roi(intrafaceMarkers.at<float>(0,3), intrafaceMarkers.at<float>(1,3), intrafaceMarkers.at<float>(0,37), intrafaceMarkers.at<float>(1,37));
+    //Mat croppedIm = r.testImage(roi);
+    //imshow("croppedyo", croppedIm);
+    //waitKey(0);
+    
     // Press any key to close
     //cv::waitKey(0);
     
     return realCenter;
 }
+
+

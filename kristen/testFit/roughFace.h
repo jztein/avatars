@@ -12,6 +12,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/nonfree/features2d.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -25,7 +28,7 @@
 using namespace std;
 using namespace cv;
 
-#define TEST_IMAGE "kristen2.jpg"
+//#define TEST_IMAGE "steph1.jpg"
 #define NAME_WINDOW "Rough Avatar test 1"
 #define NAME_SEE_MARKERS "iMarkers1.jpg"
 #define SVG_WIDTH 480
@@ -36,6 +39,7 @@ using namespace cv;
 struct Rough
 {
     Mat testImage;
+    Mat intrafaceMarkers;
     string testImageName;
     int pointsX[NUM_INTRAFACE_MARKERS];
     int pointsY[NUM_INTRAFACE_MARKERS];
@@ -52,6 +56,8 @@ void drawNose(struct Rough r, int curveStart, int curveEnd, ofstream& svgFile);
 void drawEyes(struct Rough r, int left_tl, int left_tr, int left_bl, int right_tl, int right_tr, int right_bl, ofstream& svgFile);
 void drawMouth(struct Rough r, int leftCorner, int rightCorner, int upperMiddle, int lowerMiddle, ofstream& svgFile);
 void drawFace(struct Rough r, int mid, ofstream& svgFile);
+
+Mat cropNose(struct Rough &r);
 
 #endif /* defined(__IntraFace__roughFace__) */
 
