@@ -5,6 +5,8 @@ import pylab
 import matplotlib.pyplot as plt
 import matplotlib.colors as color
 
+from math import sqrt
+
 parser = argparse.ArgumentParser(description="naively draw nose looking at gradients")
 parser.add_argument('-n', nargs=1, required=True, help="nose input file")
 parser.add_argument('-s', nargs=1, required=True, help="output svg filename")
@@ -32,8 +34,8 @@ def calcGradX(rows, cols, gradLineVecX, grayLineVec):
 
         for c in xrange(1, cols-1):
             rcols_c = rcols + c
-            gradLineVecX[rcols_c] = -grayLineVec[rcols_c-1] + \
-            grayLineVec[rcols_c+1]
+            a = -grayLineVec[rcols_c-1] + grayLineVec[rcols_c+1]
+            gradLineVecX[rcols_c] = a
 
     return gradLineVecX
 
@@ -95,16 +97,48 @@ def calcGradients(grayInfo):
     # apply gradient mask in Y-direction
     gradLineVecY = calcGradY(cols, rows, gradLineVecY, grayLineVec)
 
-    gradXIm = gradLineVecY.reshape(shape[0], shape[1])
+    print gradLineVecX
+    print "--------------------"
+    print gradLineVecY
+    #exit(1)
+
+    print "####################"
+    ignoreRows = int(rows*0.7)
+    wantRows = rows - ignoreRows
+    offset = ignoreRows * cols
+    area = numElements - offset
+    gradLVxy = np.zeros(area)
+    for i in xrange(area):
+        x = gradLineVecX[i+offset]
+        y = gradLineVecY[i+offset]
+        a = x+y
+        if a < 1:
+            gradLVxy[i] = 255
+        else:
+            gradLVxy[i] = a
+
+    #gradLVxy = gradLineVecX + gradLineVecY
+    print gradLVxy
+    #plt.hist(gradLVxy)
+    #plt.show()
+
+    gradXYIm = gradLVxy.reshape(wantRows, cols)
+    plt.imshow(gradXYIm, cmap=pylab.gray())
+    plt.show()
+    '''
+    gradXIm = gradLineVecX.reshape(shape[0], shape[1])
     plt.imshow(gradXIm, cmap=pylab.gray())
     plt.show()
 
+    gradYIm = gradLineVecY.reshape(shape[0], shape[1])
+    plt.imshow(gradYIm, cmap=pylab.gray())
+    plt.show()
+    '''
     return
 
 def binGradients(gradients):
     # return cells/ weighted gradients + orientations
     pass
-
 
 def drawNose():
     grayResults = makeGrayscale(noseIm)
@@ -117,60 +151,4 @@ if __name__ == '__main__':
     drawNose()
     exit(0)
 
-
-# DEPRECATE ME
-def makeNaiveGradients(grayInfo):
-    shape = grayInfo['shape']
-    numElements = grayInfo['numEles']
-    grayLineVec = grayInfo['grayLV']
-
-    # section image into cells
-    numCells = 20
-    cellSize = numElements / numCells
-    if numElements % numCells:
-        print 'TELL ME'
-        #exit(1)
-
-    # TODO: get gradient in more orientations
-    # gets gradient when cell is separated normally
-    for k in xrange(numCells):
-        # a cell
-
-        topHalf_dy = 0
-        botHalf_dy = 0
-
-        lefHalf_dx = 0
-        rigHalf_dx = 0
-
-        halfEles = cellSize/2
-        quartEles = cellSize/4
-
-        curStartIdx = k * cellSize
-
-        for x in xrange(curStartIdx, curStartIdx + halfEles):
-            topHalf_dy += grayLineVec[x]
-            botHalf_dy += grayLineVec[x + halfEles]
-            
-        for x in xrange(curStartIdx, curStartIdx + quartEles):
-            lefHalf_dx += grayLineVec[x]
-            lefHalf_dx += grayLineVec[x + halfEles]
-
-            rigHalf_dx += grayLineVec[x + quartEles]
-            rigHalf_dx += grayLineVec[x + halfEles + quartEles]
-
-        gradient = (topHalf_dy - botHalf_dy) / (rigHalf_dx - lefHalf_dx)
-        print gradient
-
-
-
-def calcGradLineVecMini(Xs, Ys, gradLV, grayLV):
-    for x in xrange(Xs):
-        xYs = x * Ys
-        xYs_Ys = x*Ys + Ys
-        gradLV[xYs] = grayLV[xYs+1]
-        grayLV[xYs_Ys-1] = grayLV[xYs_Ys-2]
-        for y in xrange(1, Ys-1):
-            xYs_y = xYs + y
-            gradLV[xYs_y] = -grayLV[xYs_y-1] + grayLV[xYs_y+1]
-    return gradLV
 
