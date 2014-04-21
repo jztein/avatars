@@ -11,16 +11,16 @@ parser.add_argument('-s', nargs=1, required=True, help="output svg filename")
 
 args = parser.parse_args()
 noseIm = misc.imread(args.n[0])
-outputSVG = open(args.s[0], 'w')
-
 
 def setupSVG():
+    outputSVG = open(args.s[0], 'w')
     outputSVG.write('')
 
 def closeSVG():
     outputSVG.write('')
+    outputSVG.close()
 
-def calcGradLineVec(rows, cols, gradLineVecX, grayLineVec):
+def calcGradX(rows, cols, gradLineVecX, grayLineVec):
     for r in xrange(rows):
 
         rcols = r*cols
@@ -37,6 +37,16 @@ def calcGradLineVec(rows, cols, gradLineVecX, grayLineVec):
 
     return gradLineVecX
 
+def calcGradY(cols, rows, gradLV, grayLV):
+    for c in xrange(cols):
+        # special cases: first & last elements
+        gradLV[c] = grayLV[c + rows]
+        gradLV[c + cols*(rows-1)] = -grayLV[c + cols*(rows-2)]
+
+        for r in xrange(1, rows-1):
+            #print r, "=> ", r*cols+c, "==", (r+1)*cols+c
+            gradLV[r*cols+c] = -grayLV[(r-1)*cols+c] + grayLV[(r+1)*cols+c]
+    return gradLV
 
 def makeGrayscale(noseImg):
     shape = noseImg.shape
@@ -81,9 +91,9 @@ def calcGradients(grayInfo):
     gradLineVecY = np.zeros(numElements)
 
     # apply gradient mask in X-direction
-    gradLineVecX = calcGradLineVec(rows, cols, gradLineVecX, grayLineVec)
+    gradLineVecX = calcGradX(rows, cols, gradLineVecX, grayLineVec)
     # apply gradient mask in Y-direction
-    gradLineVecY = calcGradLineVec(cols, rows, gradLineVecY, grayLineVec)
+    gradLineVecY = calcGradY(cols, rows, gradLineVecY, grayLineVec)
 
     gradXIm = gradLineVecY.reshape(shape[0], shape[1])
     plt.imshow(gradXIm, cmap=pylab.gray())
