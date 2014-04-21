@@ -1,10 +1,11 @@
 # Current plan
 
 # Yiru
-* Want to look into the control points of the face...like first in the openCV ..what are the control points that we can use to determine the shape
-* design the algorithm to generate the splines from images
+- face contour
 
 # Kristen
-* using facetracker, identify each main face feature (eyes, nose, mouth, eyebrows, face) and put in a simple SVG substitute for them (e.g. using the sample face Dave gave)
-* so from facetracker, be able to input a basic svg face, but not yet making unique face
+- try naive HOG-like finding of nose points
+- Found: this will probably fail because the points for the nose are too specific and disparate. hard to cluster in the first place.
+(See: aBtwn_15and5.png)
+- So: need to do HOG and classify or something
 
