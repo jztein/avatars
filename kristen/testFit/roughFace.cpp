@@ -17,10 +17,12 @@
 
 // for INTRAFACE::FaceAlignment::Detect()
 bool compareRect(Rect r1, Rect r2) { return r1.height < r2.height; }
-
+void contouring(Mat im, Mat& intrafaceMarkers);
 
 int main(int argc, char** argv)
 {
+    srand(unsigned(time(NULL)));
+    
     //FlannBasedMatcher m;
     struct Rough r;
     
@@ -47,12 +49,15 @@ int main(int argc, char** argv)
     // the first row holds the x-coordinates, second row holds y-coordinates
     Mat intrafaceMarkers;
     
+    Mat oriIm;
+    r.testImage.copyTo(oriIm);
+    
     // cv::Mat::r.testImage is captured webcam image from user's feed
     int frameWidth = r.testImage.size[0];
     
     cascadeClassifier.detectMultiScale(r.testImage, faces, 1.2, 2, 0, Size(50, 50));
     
-    ofstream svgFile("rough2.html");
+    ofstream svgFile("rough_hair1.html");
     initSVG(svgFile);
     
     Point realCenter;
@@ -70,6 +75,10 @@ int main(int argc, char** argv)
     }
     
     cleanupSVG(svgFile);
+    
+    cout << "dungus" << endl;
+    
+    contouring(oriIm, intrafaceMarkers);
     
 	return 0;
     
@@ -161,9 +170,10 @@ void drawFeatures(Point realCenter, struct Rough& r, ofstream& svgFile)
     
     drawFace(r, 11, svgFile);
     
-    Mat croppedToNose = cropNose(r);
-    NoseFinder nf(croppedToNose);
-    nf.findNoseShape();
+//    Mat croppedToNose = cropNose(r);
+//    NoseFinder nf(croppedToNose);
+//    //nf.findNoseShape_SIFT();
+//    nf.findNoseShape_HOG();
     
     // see things
     //drawEyebrow(r, 10, 19, svgFile);
@@ -183,9 +193,9 @@ Mat cropNose(struct Rough &r)
     Rect roi(x0, y0, x1, y1);
     
     Mat croppedIm = r.testImage(roi);
-    imshow("hello cropped!", croppedIm);
+    //imshow("hello cropped!", croppedIm);
     //imwrite("cropped1.jpg", croppedIm);
-    waitKey(0);
+    //waitKey(0);
     return croppedIm;
     
 }
@@ -346,13 +356,13 @@ Point drawMarkers(Mat intrafaceMarkers, struct Rough& r, float cFactor)
             
             // right corner: 37
             // upper middle: 34
-            if (k == 35)
+            if (k == 40)
                 R = 100;
         }
         cx = (int)intrafaceMarkers.at<float>(0,k);
         cy = (int)intrafaceMarkers.at<float>(1,k);
         
-        ////// circle(r.testImage, Point(cx, cy), 2, Scalar(B,G,R), -1);
+        circle(r.testImage, Point(cx, cy), 2, Scalar(B,G,R), -1);
         cx = int(float(cx) * cFactor);
         cy = int(float(cy) * cFactor);
         
@@ -379,4 +389,401 @@ Point drawMarkers(Mat intrafaceMarkers, struct Rough& r, float cFactor)
     return realCenter;
 }
 
+struct Pixel{
+    Vec3b bgr;
+    int x, y;
+};
+
+int distKmeans(struct Pixel a, struct Pixel centroid)
+{
+    int b, g, r;
+    b = int(a.bgr[0] - centroid.bgr[0]);
+    g = int(a.bgr[1] - centroid.bgr[1]);
+    r = int(a.bgr[2] - centroid.bgr[2]);
+
+//    int x2 = a.x - centroid.x;
+//    int y2 = a.y - centroid.y;
+//    return ((b*b + g*g + r*r) + x2*x2 + y2*y2);
+    return ((b*b + g*g + r*r));
+}
+
+void contouring(Mat im, Mat& intrafaceMarkers)
+{
+    // do k-means
+    
+    // 1) background, hair, facae
+//    int k = 3;
+    
+    // downsample image for k-means clustering speed up.
+    Mat downIm, tmp;
+    pyrDown(im, tmp, Size(im.cols/2, im.rows/2) );
+    pyrDown(tmp, tmp, Size(tmp.cols/2, tmp.rows/2) );
+    pyrDown(tmp, downIm, Size(tmp.cols/2, tmp.rows/2) );
+    
+    imshow("downsampled im", downIm);
+    waitKey();
+    
+    // convert image to struct Pixels for easy dist calculation
+    int numPixels = downIm.cols * downIm.rows;
+    Pixel* pixels = new Pixel[numPixels];
+    Pixel* cur = NULL;
+    int downImCols = downIm.cols;
+    int c;
+    for (int r = 0; r < downIm.rows; ++r)
+    {
+        for (c = 0; c < downImCols; ++c)
+        {
+            cur = pixels + (r*downImCols + c);
+            cur->x = c;
+            cur->y = r;
+            cur->bgr = downIm.at<Vec3b>(r,c);
+        }
+    }
+    
+    // debug by printing stuff
+//    cout << "PIXEL LAST\n" << cur->x << ", " << cur->y << ": (" << cur->bgr << endl;
+//    cur = pixels;
+//    cout << "PIXEL FIRST\n" << cur->x << ", " << cur->y << ": (" << cur->bgr << endl;
+//    
+//    Mat reassembledIm(downIm.rows, downIm.cols, downIm.type());
+//    cur = pixels;
+//    for (int r = 0; r < downIm.rows; ++r)
+//    {
+//        for (int c = 0; c < downImCols; ++c)
+//        {
+//            reassembledIm.at<Vec3b>(r,c) = cur->bgr;
+//            cur++;
+//        }
+//    }
+//    
+//    imshow("reassembled im", reassembledIm);
+//    waitKey();
+    
+    // debug distKmeans()
+//    Pixel p1, p2;
+//    p1.bgr = Vec3b(2,0,0); p2.bgr = Vec3b(3,0,0);
+//    p1.x = 0; p2.x = 1;
+//    p1.y = 0; p2.y = 1;
+    
+    // initialize k random centroids
+    
+    // seed rand in start of main()
+    const int K = 8;
+    Pixel centroids[K];
+    int centroidIndexes[K];
+    int randIdx = 0;
+    for (int k = 0; k < K; ++k)
+    {
+        randIdx = rand() % numPixels;
+        centroidIndexes[k] = randIdx;
+        centroids[k] = pixels[randIdx];
+    }
+    
+    // get clusters
+    vector<Pixel*> clusters[K];
+    size_t sizes[K]; // cluster sizes
+    
+    int iterations = 0;
+    
+    while (1)
+    {
+        ++iterations;
+        
+        // save old
+        vector<Pixel*> oldClusters0(clusters[0]);
+        vector<Pixel*> oldClusters1(clusters[1]);
+        vector<Pixel*> oldClusters2(clusters[2]);
+        vector<Pixel*> oldClusters3(clusters[3]);
+        vector<Pixel*> oldClusters4(clusters[4]);
+        vector<Pixel*> oldClusters5(clusters[5]);
+        vector<Pixel*> oldClusters6(clusters[6]);
+        vector<Pixel*> oldClusters7(clusters[7]);
+        vector<Pixel*> oldClusters[K];
+        oldClusters[0] = oldClusters0;
+        oldClusters[1] = oldClusters1;
+        oldClusters[2] = oldClusters2;
+        oldClusters[3] = oldClusters3;
+        oldClusters[4] = oldClusters4;
+        oldClusters[5] = oldClusters5;
+        oldClusters[6] = oldClusters6;
+        oldClusters[7] = oldClusters7;
+        
+        for (int k = 0; k < K; ++k)
+        {
+            clusters[k].clear();
+        }
+        
+        Pixel cs[K];
+        int dists[K];
+        for (int k = 0; k < K; ++k)
+        {
+            cs[k] = centroids[k];
+        }
+        
+        for (int i = 0; i < numPixels; ++i)
+        {
+            // current pixel
+            cur = pixels + i;
+            
+            // find nearest centroid to current pixel
+            for (int k = 0; k < K; ++k)
+            {
+                dists[k] = distKmeans(*cur, cs[k]);
+            }
+            
+            if (dists[0] < dists[1] && dists[0] < dists[2] && dists[0] < dists[3] && dists[0] < dists[4]&& dists[0] < dists[5] && dists[0] < dists[6]&& dists[0] < dists[7])
+            {
+                clusters[0].push_back(cur);
+            }
+            else if (dists[1] < dists[2] && dists[1] < dists[3] && dists[1] < dists[4]
+                     && dists[1] < dists[5] && dists[1] < dists[6]&& dists[1] < dists[7])
+            {
+                clusters[1].push_back(cur);
+            }
+            else if (dists[2] < dists[3] && dists[2] < dists[4]
+                     && dists[2] < dists[5] && dists[2] < dists[6]&& dists[2] < dists[7])
+            {
+                clusters[2].push_back(cur);
+            }
+            else if (dists[3] < dists[4]
+                     && dists[3] < dists[5] && dists[3] < dists[6]&& dists[3] < dists[7])
+            {
+                clusters[3].push_back(cur);
+            }
+            else if (dists[4] < dists[5] && dists[4] < dists[6]&& dists[4] < dists[7])
+            {
+                clusters[4].push_back(cur);
+            }
+            else if (dists[5] < dists[6]&& dists[5] < dists[7])
+            {
+                clusters[5].push_back(cur);
+            }
+            else if (dists[6] < dists[7])
+            {
+                clusters[6].push_back(cur);
+            }
+            else
+            {
+                clusters[7].push_back(cur);
+            }
+            
+        }
+        
+        // calculate new centroids (center of mass of clusters)
+        for (int k = 0; k < K; ++k)
+        {
+            sizes[k] = clusters[k].size();
+        }
+        for (int k = 0; k < K; ++k)
+        {
+            size_t clusterSize = sizes[k];
+            float cSize = float(clusterSize);
+            float bTotal = 0, gTotal = 0, rTotal = 0, xTotal = 0, yTotal = 0;
+            for (size_t i = 0; i < clusterSize; ++i)
+            {
+                bTotal += float(clusters[k][i]->bgr[0]);
+                gTotal += float(clusters[k][i]->bgr[1]);
+                rTotal += float(clusters[k][i]->bgr[2]);
+                xTotal += float(clusters[k][i]->x);
+                yTotal += float(clusters[k][i]->y);
+            }
+            
+            centroids[k].bgr = Vec3b(int(bTotal / cSize),
+                                     int(gTotal / cSize),
+                                     int(rTotal / cSize));
+            centroids[k].x = int(xTotal / cSize);
+            centroids[k].y = int(yTotal / cSize);
+        }
+        
+        // repeat until clusters don't change
+        bool didntChange = true;
+        for (int k = 0; k < K; ++k)
+        {
+            if (clusters[k].size() != oldClusters[k].size())
+            {
+                didntChange = false;
+                break;
+            }
+        }
+        if (didntChange)
+        {
+            // k means finished!
+            cout << "K means finished! " << clusters[0].size() << ", " << clusters[1].size() << ", " << clusters[2].size()<< ", " << clusters[3].size()<< ", " << clusters[4].size() << endl;
+            cout << "K means iterations: " << iterations << endl;
+            break;
+
+        }
+    }
+    
+    // mark pixels in each cluster with cluster color
+    size_t clusterSize = sizes[0];
+    for (size_t i = 0; i < clusterSize; ++i)
+    {
+        clusters[0][i]->bgr = Vec3b(255,0,0);
+    }
+    clusterSize = sizes[1];
+    for (size_t i = 0; i < clusterSize; ++i)
+    {
+        clusters[1][i]->bgr = Vec3b(0,255,0);
+    }
+    clusterSize = sizes[2];
+    for (size_t i = 0; i < clusterSize; ++i)
+    {
+        clusters[2][i]->bgr = Vec3b(0,0,255);
+    }
+    clusterSize = sizes[3];
+    for (size_t i = 0; i < clusterSize; ++i)
+    {
+        clusters[3][i]->bgr = Vec3b(0,255,255);
+    }
+    clusterSize = sizes[4];
+    for (size_t i = 0; i < clusterSize; ++i)
+    {
+        clusters[4][i]->bgr = Vec3b(255,0,255);
+    }
+    clusterSize = sizes[5];
+    for (size_t i = 0; i < clusterSize; ++i)
+    {
+        clusters[5][i]->bgr = Vec3b(255,255,0);
+    }
+    clusterSize = sizes[6];
+    for (size_t i = 0; i < clusterSize; ++i)
+    {
+        clusters[6][i]->bgr = Vec3b(100,40,255);
+    }
+    clusterSize = sizes[7];
+    for (size_t i = 0; i < clusterSize; ++i)
+    {
+        clusters[7][i]->bgr = Vec3b(30,20,150);
+    }
+    
+    cout << "PIXEL LAST\n" << cur->x << ", " << cur->y << ": (" << cur->bgr << endl;
+    cur = pixels;
+    cout << "PIXEL FIRST\n" << cur->x << ", " << cur->y << ": (" << cur->bgr << endl;
+    
+    Mat reassembledIm(downIm.rows, downIm.cols, downIm.type());
+    cur = pixels;
+    for (int r = 0; r < downIm.rows; ++r)
+    {
+        for (int c = 0; c < downImCols; ++c)
+        {
+            reassembledIm.at<Vec3b>(r,c) = cur->bgr;
+            cur++;
+        }
+    }
+    imshow("reassembled im", reassembledIm);
+    waitKey();
+    //imwrite("kmeans_stp.png", reassembledIm);
+    
+    
+    // cleanup
+    delete [] pixels;
+}
+
+// hair
+void contouring2(Mat im, Mat& intrafaceMarkers)
+{
+    // get general shape of hair
+    Mat grayIm;
+    cvtColor(im, grayIm, CV_BGR2GRAY);
+    Mat dst = Mat::zeros(im.rows, im.cols, CV_8UC3);
+    
+    Mat threshIm = Mat::zeros(grayIm.rows, grayIm.cols, CV_8UC1);
+    
+    threshold(grayIm, threshIm, 30, 255, THRESH_BINARY & THRESH_OTSU);
+    
+    //imshow("thresholded", threshIm);
+    //waitKey();
+    
+    Mat ele = getStructuringElement(MORPH_RECT, Size(25,25));//Size(15,15));
+    Mat openIm;
+    morphologyEx(threshIm, openIm, MORPH_OPEN, ele);
+    
+    Mat dilatedIm = openIm;
+    
+    /*
+    Mat element = getStructuringElement(MORPH_RECT, Size(2,2));
+    Mat dilatedIm;
+    //morphologyEx(threshIm, openIm, MORPH_CLOSE, element);
+    erode (openIm, dilatedIm, element);
+    //imshow("dilated", dilatedIm);
+    //waitKey();
+    //*/
+    
+    imshow("opened and dilated", openIm);
+    //waitKey();
+    
+    // use markers to remove face region naively
+    Point2d topleft, topright, botleft, botright;
+    topleft.x = (int)intrafaceMarkers.at<float>(0,0);
+    topleft.y = (int)intrafaceMarkers.at<float>(1,0);
+    topright.x = (int)intrafaceMarkers.at<float>(0,9);
+    topright.y = (int)intrafaceMarkers.at<float>(1,9);
+    botleft.x = (int)intrafaceMarkers.at<float>(0,0);
+    botleft.y = (int)intrafaceMarkers.at<float>(1,40);
+    botright.x = (int)intrafaceMarkers.at<float>(0,9);
+    botright.y = (int)intrafaceMarkers.at<float>(1,40);
+    cout << topleft << ", " << topright << ", " << botleft << ", " << botright << endl;
+    
+    for (int r = 0; r < dilatedIm.rows; ++r)
+    {
+        if (r <= botleft.y && r >= topleft.y)
+        {
+            for (int c = 0; c < dilatedIm.cols; ++c)
+            {
+                if (c >= topleft.x && c <= topright.x)
+                {
+                    circle(dilatedIm, Point(c,r), 2, Scalar(255), -1);
+                    //cout << "burn" << endl;
+                    //dilatedIm.at<int>(r,c) = 50;
+                }
+            }
+        }
+        
+    }
+    
+    Mat invertedIm(dilatedIm.rows, dilatedIm.cols, CV_8U);
+    invertedIm = Scalar(255);
+    invertedIm -= dilatedIm;
+    
+    
+    Mat markers(invertedIm.rows, invertedIm.cols, CV_32SC1);
+    for (int r = 0; r < invertedIm.rows; ++r)
+    {
+        for (int c = 0; c < invertedIm.cols; ++c)
+        {
+            if (invertedIm.at<uchar>(r, c) == 255)
+            {
+                markers.at<int>(r, c) = 2;
+            }
+            else
+            {
+                markers.at<int>(r, c) = 1;
+            }
+        }
+    }
+    //imwrite("markers_s.jpg", markers);
+    
+    
+    
+    // do watershed with specifically initialized markers
+    watershed(im, markers);
+    //imshow("watersheded markers", markers);
+    //waitKey();
+    
+    Mat boundedIm = im.clone();
+    for (int r = 0; r < markers.rows; ++r)
+    {
+        for (int c = 0; c < markers.cols; ++c)
+        {
+            if (markers.at<int>(r, c) == -1)
+            {
+                boundedIm.at<Vec3b>(r,c) = Vec3b(255,0,0);
+            }
+        }
+    }
+    imshow("bounded im", boundedIm);
+    waitKey();
+    
+}
 
