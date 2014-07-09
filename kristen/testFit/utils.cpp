@@ -37,6 +37,37 @@ bool parseArgs(int argc, char** argv, struct Rough& rough)
         rough.testImageName = string(argv[1]);
         parseArgs(argc-2, argv+2, rough);
     }
+    // face align
+    else if (strcmp(curArg, "--align") == 0)
+    {
+        cout << "moany" << endl;
+        rough.align = true;
+        parseArgs(argc-1, argv+1, rough);
+    }
+    else if (strcmp(curArg, "--html") == 0)
+    {
+        cout << "svg in html file: " << curArg << endl;
+        rough.htmlFile = string(argv[1]);
+        parseArgs(argc-2, argv+2, rough);
+    }
+    else if (strcmp(curArg, "--jpg") == 0)
+    {
+        cout << "intraface markers in jpg: " << curArg << endl;
+        rough.markersJpg = string(argv[1]);
+        parseArgs(argc-2, argv+2, rough);
+    }
+    else if (strcmp(curArg, "--kmeansJpg") == 0)
+    {
+        cout << "kmeans in jpg: " << curArg << endl;
+        rough.kmeansJpg = string(argv[1]);
+        parseArgs(argc-2, argv+2, rough);
+    }
+    else if (strcmp(curArg, "--kmeans") == 0)
+    {
+        cout << "do kmeans clustering for hair!" << endl;
+        rough.doKmeans = true;
+        parseArgs(argc-1, argv+1, rough);
+    }
     
     return false;
 }

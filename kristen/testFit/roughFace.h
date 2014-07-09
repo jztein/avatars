@@ -12,6 +12,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <opencv2/calib3d/calib3d.hpp>
+
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/nonfree/features2d.hpp"
 
@@ -28,9 +30,8 @@
 using namespace std;
 using namespace cv;
 
-//#define TEST_IMAGE "steph1.jpg"
 #define NAME_WINDOW "Rough Avatar test 1"
-#define NAME_SEE_MARKERS "iMarkers1.jpg"
+#define NAME_SEE_MARKERS "iMarkers2_2.jpg"
 #define SVG_WIDTH 480
 #define SVG_HEIGHT 480
 #define SVG_CENTER 240 // 480/2
@@ -43,6 +44,20 @@ struct Rough
     string testImageName;
     int pointsX[NUM_INTRAFACE_MARKERS];
     int pointsY[NUM_INTRAFACE_MARKERS];
+    
+    string htmlFile;
+    string markersJpg;
+    string kmeansJpg;
+    
+    // for hair
+    // anything within the triangle of (highest-leftest, highest-rightest, lowest-center)
+    // is considered non-hair automatically.
+    Point lowerLipCoord, centerCoord;
+    Point leftestEyeCorner, highestLeftEyeCorner;
+    Point rightestEyeCorner, highestRightEyeCorner;
+    
+    bool align;
+    bool doKmeans;
 };
 
 void initSVG(ofstream& svgFile);
