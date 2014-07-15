@@ -434,7 +434,7 @@ void clustering(Mat im, Mat& intrafaceMarkers, struct Rough& rough)
     
     Mat contourIm = getContours(upIm);
     
-    
+    drawHairSvg(contourIm);
     
     // cleanup
     delete [] pixels;
@@ -475,10 +475,211 @@ Mat getContours(Mat src)
 }
 
 
-void drawSvg(Mat& contourIm)
+int dist2(int x1, int x2, int y1, int y2)
 {
-    ;
+    return abs(x1 - x2) + abs(y1 - y2);
 }
+
+void drawHairSvg(Mat& contourIm)
+{
+    cout << "getting markers out of contours... " << endl;
+    
+    // scan for some point, and then around.
+    
+    // SVG init.
+    ofstream svgFile("SVG_HAIR.html");
+    
+    int cSvgWidth = contourIm.cols - 1;
+    int cSvgHeight = contourIm.rows - 1;
+    
+    // SVG init
+    svgFile << "<!DOCTYPE html>\n<html>\n<body>\n<svg width='" << cSvgWidth << "' height='" << cSvgHeight << "' xmlns='http://www.w3.org/2000/svg' xmlns:xlink= 'http://www.w3.org/1999/xlink' viewBox='0 0 " << cSvgWidth << " " << cSvgHeight << "'> \n";
+    
+    // SVG defs
+    svgFile << "<defs> \n";
+    svgFile << "</defs> \n";
+    
+    // Background
+    svgFile << "<rect x='0' y='0' width='" << cSvgWidth << "' height='" << cSvgHeight << "' style='fill:blue;opacity:0.1'/> \n";
+    
+
+    ///////////////////
+    
+    
+    // contour line = white
+    // rest = black
+    
+    int startPtX = 0;
+    int startPtY = 0;
+    
+    // used to estimate radius of circle
+    int lowestY = 0, highestY = contourIm.rows - 1;
+    int leftestX = contourIm.cols - 1, rightestX = 0;
+    
+    Vec3b whiteOutColor(255,255,255);
+    Vec3b blackOutColor(0,0,0);
+    Vec3b curColor;
+    for (int r = 0; r < contourIm.rows; ++r)
+    {
+        for (int c = 0; c < contourIm.cols; ++c)
+        {
+            curColor = contourIm.at<Vec3b>(r,c);
+            if (curColor == whiteOutColor)
+            {
+                if (lowestY < r)
+                    lowestY = r;
+                if (highestY > r)
+                    highestY = r;
+                if (leftestX > c)
+                    leftestX = c;
+                if (rightestX < c)
+                    rightestX = c;
+                
+                if (startPtX == 0 && startPtY == 0) {
+                    startPtX = c;
+                    startPtY = r;
+                    //break;
+                }
+            }
+        }
+        /*
+         if (startPtX != 0 && startPtY != 0)
+         break;
+         //*/
+    }
+    cout << "START POINT" << startPtX << ", " << startPtY << endl;
+    cout << lowestY << " -> " << highestY << endl;
+    cout << leftestX << " -> " << rightestX << endl;
+    
+    svgFile << "<circle style='fill:#0000ff' cx='" << startPtX << "' cy='" << startPtY << "' r='3' />\n";
+    
+    svgFile << "<path d='M" << startPtX << " " << startPtY << " ";
+    
+    
+    vector<int> xPoints, yPoints;
+    xPoints.push_back(startPtX);
+    yPoints.push_back(startPtY);
+    
+    // Do a scan to get points
+    
+    int scanFrequency = int(float(lowestY - highestY) / 40.0f);
+    for (int r = 0; r < contourIm.rows; r+=scanFrequency)
+    {
+        for (int c = 0; c < contourIm.cols; ++c)
+        {
+            curColor = contourIm.at<Vec3b>(r,c);
+            if (curColor == whiteOutColor)
+            {
+                // save found point
+                xPoints.push_back(c);
+                yPoints.push_back(r);
+                
+                // go to next row
+                c += scanFrequency;
+            }
+        }
+    }
+    
+    cout << "$$$ Got number of POINTS: " << xPoints.size() << endl;
+    
+    ///////////////////
+    
+    // Sort to get order of points.
+    // start point should be the divider of left and right points since
+    // it should find the topmost point.
+    // xPoints and yPoints are already sorted by y's top to bottom.
+    // because that's how our for loop traversed the image.
+    vector<int> xSortedPts;
+    vector<int> ySortedPts;
+    
+    // mark as 1 is seen, 0 otherwise
+    vector<int> ptsMarked = xPoints;
+    ptsMarked[0] = 1;
+    for (size_t i = 1; i < ptsMarked.size(); ++i)
+    {
+        ptsMarked[i] = 0;
+    }
+    
+    // keep track of this to know when to add extra point
+    int sumDist = 0;
+    int avgDist = 0;
+    size_t blastFromPast = 0;
+    
+    int lastPtX = startPtX;
+    int lastPtY = startPtY;
+    
+    xSortedPts.push_back(startPtX);
+    ySortedPts.push_back(startPtY);
+    
+    size_t closestJx;
+    for (size_t i = 1; i < xPoints.size(); ++i)
+    {
+        int closestDist = dist2(xPoints[i], lastPtX, yPoints[i], lastPtY);
+        closestJx = i;
+        for (size_t j = 1; j < xPoints.size(); ++j)
+        {
+            if (i == j)
+                continue;
+            int curDist = dist2(xPoints[j], lastPtX, yPoints[j], lastPtY);
+            if ((closestDist > curDist) && !ptsMarked[j])
+            {
+                closestDist = curDist;
+                closestJx = j;
+                
+                sumDist += closestDist;
+                avgDist = sumDist / i;
+            }
+            
+        }
+        
+        if (closestDist > avgDist * 5 && avgDist != 0 && blastFromPast == 0)
+        {
+            xSortedPts.push_back(xSortedPts[blastFromPast]);
+            ySortedPts.push_back(ySortedPts[blastFromPast]);
+            blastFromPast = i;
+            
+            sumDist -= closestDist;
+            avgDist = sumDist / (i - 1);
+        }
+        
+        ptsMarked[closestJx] = 1;
+        xSortedPts.push_back(xPoints[closestJx]);
+        ySortedPts.push_back(yPoints[closestJx]);
+        lastPtX = xPoints[closestJx];
+        lastPtY = yPoints[closestJx];
+    }
+    
+    //xSortedPts.push_back(lastPtX);
+    //ySortedPts.push_back(lastPtY);
+    
+    //xSortedPts.push_back(startPtX);
+    //ySortedPts.push_back(startPtY);
+    
+    
+    
+    
+    // nearest point should be the next point
+    
+    ///////////////////
+    
+    for (size_t i = 0; i < xSortedPts.size(); ++i)
+    {
+        //svgFile << "<circle style='fill:#0000ff' cx='" << xSortedPts[i] << "' cy='" << ySortedPts[i] << "' r='3' />\n";
+        svgFile << "L " << xSortedPts[i] << " " << ySortedPts[i] << " ";
+        //cout << ">> " << xSortedPts[i] << ", " << ySortedPts[i] << endl;
+    }
+    
+    
+    // SVG clean up
+    svgFile << "' fill='red' stroke='black' />\n";
+    
+    
+    
+    svgFile << "</svg>\n</body>\n</html>\n";
+    svgFile.close();
+    
+}
+
 
 
 
@@ -559,6 +760,342 @@ void drawSvg(Mat& contourIm)
 
 
 
+void drawHairSvg2(Mat& contourIm)
+{
+    cout << "getting markers out of contours... " << endl;
+    
+    // scan for some point, and then around.
+    
+    ofstream svgFile("SVG_HAIR.html");
+    
+    int cSvgWidth = contourIm.cols - 1;
+    int cSvgHeight = contourIm.rows - 1;
+    
+    // SVG init
+    svgFile << "<!DOCTYPE html>\n<html>\n<body>\n<svg width='" << cSvgWidth << "' height='" << cSvgHeight << "' xmlns='http://www.w3.org/2000/svg' xmlns:xlink= 'http://www.w3.org/1999/xlink' viewBox='0 0 " << cSvgWidth << " " << cSvgHeight << "'> \n";
+    
+    // SVG defs
+    svgFile << "<defs> \n";
+    svgFile << "</defs> \n";
+    
+    // Background
+    svgFile << "<rect x='0' y='0' width='" << cSvgWidth << "' height='" << cSvgHeight << "' style='fill:blue;opacity:0.1'/> \n";
+    
+    
+    // contour line = white
+    // rest = black
+    
+    int startPtX = 0;
+    int startPtY = 0;
+    
+    // used to estimate radius of circle
+    int lowestY = 0, highestY = contourIm.rows - 1;
+    int leftestX = contourIm.cols - 1, rightestX = 0;
+    
+    Vec3b whiteOutColor(255,255,255);
+    Vec3b blackOutColor(0,0,0);
+    Vec3b curColor;
+    for (int r = 0; r < contourIm.rows; ++r)
+    {
+        for (int c = 0; c < contourIm.cols; ++c)
+        {
+            curColor = contourIm.at<Vec3b>(r,c);
+            if (curColor == whiteOutColor)
+            {
+                if (lowestY < r)
+                    lowestY = r;
+                if (highestY > r)
+                    highestY = r;
+                if (leftestX > c)
+                    leftestX = c;
+                if (rightestX < c)
+                    rightestX = c;
+                
+                if (startPtX == 0 && startPtY == 0) {
+                    startPtX = c;
+                    startPtY = r;
+                    //break;
+                }
+            }
+        }
+        /*
+         if (startPtX != 0 && startPtY != 0)
+         break;
+         //*/
+    }
+    cout << "START POINT" << startPtX << ", " << startPtY << endl;
+    cout << lowestY << " -> " << highestY << endl;
+    cout << leftestX << " -> " << rightestX << endl;
+    
+    svgFile << "<path d='M" << startPtX << " " << startPtY << " ";
+    svgFile << "<circle style='fill:#0000ff' cx='" << startPtX << "' cy='" << startPtY << "' r='3' />\n";
+    
+    vector<int> xPoints, yPoints;
+    xPoints.push_back(startPtX);
+    yPoints.push_back(startPtY);
+    
+    int estimatedRadius = int(float(lowestY - highestY) / 10.0f);
+    cout << "ESTIMATED RADIUS" << estimatedRadius << " => " << estimatedRadius / 4 << endl;
+    int someDistER = estimatedRadius / 4;
+    if (someDistER == 0)
+        someDistER = 2;
+    int closeDistER = estimatedRadius / 8;
+    if (closeDistER == 0)
+        closeDistER = 1;
+    int left, right, top, bot;
+    Point topLeft, topRight, botLeft, botRight;
+    int i = 0;
+    
+    enum DIR{
+        UP, DOWN, LEFT, RIGHT
+    };
+    DIR lastDir = UP;
+    
+    int lastDirection;
+    
+    // just go in a square because circles are expensive.
+    while (true)
+    {
+        if (i > 0)
+        {
+            // if it has returned within certain distance, ok.
+            // => we've completed a full circle.
+            
+            if (abs(startPtY - yPoints[i]) < closeDistER &&
+                abs(startPtX - xPoints[i]) < closeDistER)
+            {
+                cout << "calous: " << abs(startPtY - yPoints[i]) << ", " << abs(startPtX - xPoints[i]) << endl;
+                break;
+            }
+            
+        }
+        
+        // get boundaries of square to poll
+        left = xPoints[i] - estimatedRadius;
+        top = yPoints[i] - estimatedRadius;
+        right = xPoints[i] + estimatedRadius;
+        bot = yPoints[i] + estimatedRadius;
+        
+        // checks
+        if (left < 0)
+            left = 0;
+        if (top < 0)
+            top = 0;
+        if (right >= contourIm.cols)
+            right = contourIm.cols - 1;
+        if (bot >= contourIm.rows)
+            bot = contourIm.rows - 1;
+        
+        bool found = false;
+        
+        // find arbitrary next point
+        
+        switch (lastDir) {
+            case UP:
+                if (!found)
+                {
+                    for (int x = left; x < right; x+=closeDistER)
+                    {
+                        int y = top;
+                        {
+                            curColor = contourIm.at<Vec3b>(y,x);
+                            if (curColor == whiteOutColor)
+                            {
+                                xPoints.push_back(x);
+                                yPoints.push_back(y);
+                                cout << "> " << x << ", " << y << endl;
+                                svgFile << "L " << x << " " << y << " ";
+                                found = true;
+                                lastDir = UP;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+                
+            case DOWN:
+                if (!found)
+                {
+                    for (int x = left; x < right; x+=closeDistER)
+                    {
+                        int y = bot;
+                        {
+                            curColor = contourIm.at<Vec3b>(y,x);
+                            if (curColor == whiteOutColor)
+                            {
+                                xPoints.push_back(x);
+                                yPoints.push_back(y);
+                                cout << "> " << x << ", " << y << endl;
+                                svgFile << "L " << x << " " << y << " ";
+                                found = true;
+                                lastDir = DOWN;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+                
+            case LEFT:
+                if (!found)
+                {
+                    // crawl left edge of square
+                    for (int y = top; y < bot; y+=closeDistER)
+                    {
+                        int x = left;
+                        {
+                            curColor = contourIm.at<Vec3b>(y,x);
+                            if (curColor == whiteOutColor)
+                            {
+                                xPoints.push_back(x);
+                                yPoints.push_back(y);
+                                cout << "> " << x << ", " << y << endl;
+                                svgFile << "L " << x << " " << y << " ";
+                                found = true;
+                                lastDir = LEFT;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                break;
+                
+            case RIGHT:
+                if (!found)
+                {
+                    for (int y = top; y < bot; y+=closeDistER)
+                    {
+                        int x = right;
+                        {
+                            curColor = contourIm.at<Vec3b>(y,x);
+                            if (curColor == whiteOutColor)
+                            {
+                                xPoints.push_back(x);
+                                yPoints.push_back(y);
+                                cout << "> " << x << ", " << y << endl;
+                                svgFile << "L " << x << " " << y << " ";
+                                found = true;
+                                lastDir = RIGHT;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+                
+            default:
+                break;
+        }
+        
+        
+        /////// end experiment <=================== ************ ======== ********
+        
+        // crawl top edge of square
+        if (!found)
+        {
+            for (int x = left; x < right; x+=someDistER)
+            {
+                int y = top;
+                {
+                    curColor = contourIm.at<Vec3b>(y,x);
+                    if (curColor == whiteOutColor)
+                    {
+                        xPoints.push_back(x);
+                        yPoints.push_back(y);
+                        cout << "> " << x << ", " << y << endl;
+                        svgFile << "L " << x << " " << y << " ";
+                        found = true;
+                        lastDir = UP;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (!found)
+        {
+            // crawl left edge of square
+            for (int y = top; y < bot; y+=someDistER)
+            {
+                int x = left;
+                {
+                    curColor = contourIm.at<Vec3b>(y,x);
+                    if (curColor == whiteOutColor)
+                    {
+                        xPoints.push_back(x);
+                        yPoints.push_back(y);
+                        cout << "> " << x << ", " << y << endl;
+                        svgFile << "L " << x << " " << y << " ";
+                        found = true;
+                        lastDir = LEFT;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // crawl bottom edge of square
+        if (!found)
+        {
+            for (int x = left; x < right; x+=someDistER)
+            {
+                int y = bot;
+                {
+                    curColor = contourIm.at<Vec3b>(y,x);
+                    if (curColor == whiteOutColor)
+                    {
+                        xPoints.push_back(x);
+                        yPoints.push_back(y);
+                        cout << "> " << x << ", " << y << endl;
+                        svgFile << "L " << x << " " << y << " ";
+                        found = true;
+                        lastDir = DOWN;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // crawl right edge of square
+        if (!found)
+        {
+            for (int y = top; y < bot; y+=someDistER)
+            {
+                int x = right;
+                {
+                    curColor = contourIm.at<Vec3b>(y,x);
+                    if (curColor == whiteOutColor)
+                    {
+                        xPoints.push_back(x);
+                        yPoints.push_back(y);
+                        cout << "> " << x << ", " << y << endl;
+                        svgFile << "L " << x << " " << y << " ";
+                        found = true;
+                        lastDir = RIGHT;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        
+        if (found)
+            i++;
+        
+        // should actually never reach here.
+        else
+            cout << "bobobo" << endl;
+    }
+    
+    svgFile << "' fill='transparent' stroke='black' />\n";
+    
+    cout << "$$$ Got all - number of POINTS: " << i << endl;
+    
+    svgFile << "</svg>\n</body>\n</html>\n";
+    svgFile.close();
+}
 
 
 

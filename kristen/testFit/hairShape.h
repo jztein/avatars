@@ -21,7 +21,7 @@ int distKmeans(struct Pixel a, struct Pixel centroid);
 
 void clustering(Mat im, Mat& intrafaceMarkers, struct Rough& rough);
 Mat getContours(Mat src);
-void drawSvg(Mat& contourIm);
+void drawHairSvg(Mat& contourIm);
 
 // deprecated
 void contouring2(Mat im, Mat& intrafaceMarkers);
