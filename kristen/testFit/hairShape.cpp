@@ -851,7 +851,7 @@ void drawHairSvg2(Mat& contourIm)
     };
     DIR lastDir = UP;
     
-    int lastDirection;
+    //int lastDirection;
     
     // just go in a square because circles are expensive.
     while (true)

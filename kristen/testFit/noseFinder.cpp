@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <iostream>
 
+#include <opencv2/imgproc/imgproc.hpp>
+
 using namespace cv;
 
 NoseFinder::NoseFinder(Mat targetIm)
@@ -30,9 +32,42 @@ NoseFinder::NoseFinder(Mat targetIm)
     resize(mRefNose, biggerRN, biggerRN.size(), INTER_AREA);
 }
  
+// HOG
+
+void NoseFinder::findNoseShape_HOG()
+{
+    Mat grayTarget, blurredTarget;
+    
+    GaussianBlur(mTarget, blurredTarget, Size(3,3), 0);
+    cvtColor(blurredTarget, grayTarget, CV_BGR2GRAY);
+    
+    Mat gradX, gradY, absGradX, absGradY;
+    Sobel(grayTarget, gradX, CV_16S, 1, 0, 5, 1, 0, BORDER_DEFAULT);
+    Sobel(grayTarget, gradY, CV_16S, 0, 1, 5, 1, 0, BORDER_DEFAULT);
+    convertScaleAbs(gradX, absGradX);
+    convertScaleAbs(gradY, absGradY);
+    
+    Mat grad;
+    addWeighted(absGradX, 0.5, absGradY, 0.5, 0, grad);
+    
+    //blurredTarget = grayTarget;
+    
+    //Mat biggerRN(grad.rows*2, grad.cols*2, CV_8U);
+    //resize(grad, biggerRN, biggerRN.size(), INTER_AREA);
+    Mat biggerRN = grad;
+    
+    imshow("grad target", biggerRN);
+    
+    imshow(" target", mTarget);
+    imwrite("grad_stp1.jpg", grad);
+    
+    waitKey(0);
+}
 
 
-void NoseFinder::findNoseShape()
+// SIFT
+
+void NoseFinder::findNoseShape_SIFT()
 {
     vector<Point2f> im0Points, im1Points;
     siftMatching(im0Points, im1Points);

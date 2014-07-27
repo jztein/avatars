@@ -10,6 +10,7 @@
 
 #include "alignFront.h"
 #include "hairShape.h"
+#include "hair_shapeContexts.h"
 
 //
 //  Some INTRAFACE setup code adapted from
@@ -140,6 +141,13 @@ int main(int argc, char** argv)
     }
     
     cleanupSVG(svgFile);
+    
+    if (r.hair_contexts)
+    {
+        cout << "Getting hair shape context stuff." << endl;
+        shapeContextsMain(r, oriIm);  // from hair_shapeContexts
+        exit(0);
+    }
     
     if (r.doKmeans ) {
         cout << "DOING K MEANS CLUSTERING FOR HAIR" << endl;
@@ -492,23 +500,23 @@ Point drawMarkers(Mat intrafaceMarkers, struct Rough& r, float cFactor)
                 break;
             case 19:
                 r.leftestEyeCorner = Point(cx, cy);
-                cout << "$: " << cx << "," << cy << endl;
+                //cout << "$: " << cx << "," << cy << endl;
                 break;
             case 20:
                 r.highestLeftEyeCorner = Point(cx, cy);
-                cout << "$: " << cx << "," << cy << endl;
+                //cout << "$: " << cx << "," << cy << endl;
                 break;
             case 28:
                 r.rightestEyeCorner = Point(cx, cy);
-                cout << "$: " << cx << "," << cy << endl;
+                //cout << "$: " << cx << "," << cy << endl;
                 break;
             case 27:
                 r.highestRightEyeCorner = Point(cx, cy);
-                cout << "$: " << cx << "," << cy << endl;
+                //cout << "$: " << cx << "," << cy << endl;
                 break;
             case 40:
                 r.lowerLipCoord = Point(cx, cy);
-                cout << "$: " << cx << "," << cy << endl;
+                //cout << "$: " << cx << "," << cy << endl;
                 break;
         }
         
@@ -526,7 +534,6 @@ Point drawMarkers(Mat intrafaceMarkers, struct Rough& r, float cFactor)
     //cv::imshow(WINDOW_NAME, r.testImage);
     
     imwrite(r.markersJpg, r.testImage);
-    cout << "blatantly" << endl;
     
     //Rect roi(intrafaceMarkers.at<float>(0,3), intrafaceMarkers.at<float>(1,3), intrafaceMarkers.at<float>(0,37), intrafaceMarkers.at<float>(1,37));
     //Mat croppedIm = r.testImage(roi);

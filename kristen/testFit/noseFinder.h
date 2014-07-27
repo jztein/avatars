@@ -51,7 +51,8 @@ class NoseFinder
 public:
 
     NoseFinder(Mat targetIm);
-    void findNoseShape();
+    void findNoseShape_SIFT();
+    void findNoseShape_HOG();
          /*
     vector<struct Pt> getDrawing(){ vector<struct Pt> m; return m; }
     //*/

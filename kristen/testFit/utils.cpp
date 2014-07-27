@@ -40,7 +40,7 @@ bool parseArgs(int argc, char** argv, struct Rough& rough)
     // face align
     else if (strcmp(curArg, "--align") == 0)
     {
-        cout << "moany" << endl;
+        cout << "face align" << endl;
         rough.align = true;
         parseArgs(argc-1, argv+1, rough);
     }
@@ -66,6 +66,12 @@ bool parseArgs(int argc, char** argv, struct Rough& rough)
     {
         cout << "do kmeans clustering for hair!" << endl;
         rough.doKmeans = true;
+        parseArgs(argc-1, argv+1, rough);
+    }
+    else if (strcmp(curArg, "--contexts") == 0)
+    {
+        cout << "Hair shape contexts" << endl;
+        rough.hair_contexts = true;
         parseArgs(argc-1, argv+1, rough);
     }
     

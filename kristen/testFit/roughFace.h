@@ -58,6 +58,7 @@ struct Rough
     
     bool align;
     bool doKmeans;
+    bool hair_contexts;
 };
 
 void initSVG(ofstream& svgFile);
