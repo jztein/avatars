@@ -11,9 +11,10 @@
 #include <iostream>
 #include "roughFace.h"
 
-#define SCAN_FREQUENCY 20.0f
-#define HISTOGRAM_BINS_PER_POINT 10
+#define SCAN_FREQUENCY 50.0f
+#define HISTOGRAM_BINS_PER_POINT 16
 #define EPSILON 1e-6
+#define OMEGA 1e6
 
 struct EdgePoints {
     vector<int> x_points;
@@ -40,13 +41,18 @@ struct ShapeContext{
 };
 
 struct PointVectors {
-    vector<int> x_vectors;
-    vector<int> y_vectors;
+    vector<float> x_vectors;
+    vector<float> y_vectors;
     
     vector<float> vector_lengths;
+    vector<float> angles;
     float min_length;  // minimum vector length
     float max_length;  // maximum vector length
 };
+
+void drawHistogram(Histogram histogram);
+
+void drawShapeContext(ShapeContext shape_context);
 
 Histogram getHistogram(PointVectors vector_group);
 

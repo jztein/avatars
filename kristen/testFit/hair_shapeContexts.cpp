@@ -27,7 +27,7 @@
 // =========================================================================
 //
 //  Created by Kristen Aw on 7/26/14.
-//  TODO(kristen): Clean up.
+//  TODO(kristen): Matching, Clean up.
 //
 #include "hair_shapeContexts.h"
 #include "roughFace.h"
@@ -48,7 +48,7 @@ vector<EdgePoints> getLibraryInfo(const string& globby_dir_name)
         for (size_t i = 0; i < glob_buffer.gl_pathc; i++)
         {
             string filename(glob_buffer.gl_pathv[i]);
-            fprintf(stderr, "%s\n", filename.c_str());
+            //fprintf(stderr, "%s\n", filename.c_str());
             png_filenames.push_back(filename);
             
             Mat im = imread(filename);
@@ -106,16 +106,32 @@ ShapeContext getShapeContext(EdgePoints info)
         float max_distance = 0.0f;
         vector<float> lengths;
         
-        vector<int> x_vectors, y_vectors;
-        int x_pt = info.x_points[i];
-        int y_pt = info.y_points[i];
+        vector<float> x_vectors, y_vectors;
+        vector<float> angles;   // angle compared to right X-axis.
+        float x_pt = info.x_points[i];
+        float y_pt = info.y_points[i];
+        
+        float xy_dist = sqrt(x_pt * x_pt + y_pt * y_pt);
+        
         for (size_t j = 0; j < num_points; ++j)
         {
             if (i == j)
                 continue;
+
+            float x_j = info.x_points[j];
+            float y_j = info.y_points[j];
             
-            int xij = info.x_points[j] - x_pt;
-            int yij = info.y_points[j] - y_pt;
+            float xij = float(x_j - x_pt);
+            float yij = float(y_j- y_pt);
+            
+            float xy_j_dist = sqrt(x_j * x_j + y_j * y_j);
+            float angle = acos((x_pt * x_j + y_pt * y_pt)/ (xy_dist * xy_j_dist));
+            angles.push_back(angle);
+            
+            // angle 1
+            // angle 2
+            // angle = angle 1 - angle 2
+            
             x_vectors.push_back(xij);
             y_vectors.push_back(yij);
             float vector_length = sqrt( float(xij * xij + yij * yij) );
@@ -134,12 +150,13 @@ ShapeContext getShapeContext(EdgePoints info)
         vector_group.min_length = min_distance;
         vector_group.max_length = max_distance;
         vector_group.vector_lengths = lengths;
+        vector_group.angles = angles;
         
         all_vector_groups.push_back(vector_group);
     }
     
     // Get mean distance of all vector pairs.
-    int mean_distance = int(sum_distance / num_vector_pairs);
+    float mean_distance = sum_distance / num_vector_pairs;
     
     // Bin everything into histograms. Each vector group gets its own histogram.
     vector<Histogram> all_histograms;
@@ -151,10 +168,10 @@ ShapeContext getShapeContext(EdgePoints info)
     {
         for (size_t j = 0; j < all_vector_groups[i].x_vectors.size(); ++j)
         {
-            int cur_x = all_vector_groups[i].x_vectors[j];
-            int cur_y = all_vector_groups[i].y_vectors[j];
-            all_vector_groups[i].x_vectors[j] = cur_x / mean_distance;
-            all_vector_groups[i].y_vectors[j] = cur_y / mean_distance;
+            float new_x = all_vector_groups[i].x_vectors[j] / mean_distance;
+            float new_y = all_vector_groups[i].y_vectors[j] / mean_distance;
+            all_vector_groups[i].x_vectors[j] = new_x;
+            all_vector_groups[i].y_vectors[j] = new_y;
         }
         all_histograms.push_back(getHistogram(all_vector_groups[i]));
     }
@@ -168,7 +185,9 @@ ShapeContext getShapeContext(EdgePoints info)
     std::stringstream imNum_sstream;
     imNum_sstream << info.im_id;
     string imNum_str = imNum_sstream.str();
-    string context_filename = "hair_contexts/shape_contexts_" + imNum_str + ".txt";
+    string context_filename = "hair_contexts/shape_contexts_" + imNum_str;// + ".txt";
+    shape_context.filename = context_filename;
+    context_filename += ".txt";
     ofstream context_file(context_filename.c_str());
     
     for (size_t line = 0; line < all_histograms.size(); ++line)
@@ -182,6 +201,8 @@ ShapeContext getShapeContext(EdgePoints info)
     
     context_file.close();
     
+    drawShapeContext(shape_context);
+    
     return shape_context;
 }
 
@@ -190,45 +211,109 @@ Histogram getHistogram(PointVectors vector_group)
 {
     Histogram histogram;
     
-    // Each bin should be a fraction
-    // fraction = (num vectors in bin) / (num vectors in vector_group)
-    float num_vectors = (float) vector_group.vector_lengths.size();
+    // initialize histogram bins
+    for (size_t i = 0; i < HISTOGRAM_BINS_PER_POINT; ++i)
+    {
+        histogram.bins[i] = 0;
+    }
     
-    // Define bins
-    float minimum = vector_group.min_length;
-    float maximum = vector_group.max_length;
-    float bin_range = (maximum - minimum) / float(HISTOGRAM_BINS_PER_POINT);
+    // Do radial binning!
+    float min_angle = 0.0f;
+    float max_angle = 2 * 3.15;
+    float bin_range = (max_angle - min_angle) / float(HISTOGRAM_BINS_PER_POINT);
     float bin_end;
     for (size_t i = 0; i < vector_group.vector_lengths.size(); ++i)
     {
-        float cur_length = vector_group.vector_lengths[i];
-        bool got_binned = false;
+        float cur_angle = vector_group.angles[i];
         int bin_num = 0;
-        for (float bin_start = minimum; bin_start < maximum; bin_start += bin_range)
+        for (float bin_start = min_angle; bin_start < max_angle; bin_start += bin_range)
         {
             bin_end = bin_start + bin_range;
             
-            if (cur_length >= (bin_start - EPSILON) && cur_length <= (bin_end + EPSILON))
+            if (cur_angle >= (bin_start - EPSILON) && cur_angle <= (bin_end + EPSILON))
             {
                 histogram.bins[bin_num]++;
-                got_binned = true;
                 break;
             }
             ++bin_num;
         }
-        if (got_binned)
-        {
-            break;
-        }
     }
+    
+    // Each bin should be a fraction
+    // fraction = (num vectors in bin) / (num vectors in vector_group)
+    float num_vectors = (float) vector_group.angles.size();
     
     // Normalize bins
     for (size_t i = 0; i < HISTOGRAM_BINS_PER_POINT; ++i)
     {
         histogram.bins[i] /= num_vectors;
     }
-    
+    drawHistogram(histogram);
+
     return histogram;
+}
+
+void drawHistogram(Histogram histogram)
+{
+    int rows = 4;
+    int cols = 4;//HISTOGRAM_BINS_PER_POINT;
+    
+    //cout << "rows: " << rows << ", cols: " << cols << endl;
+    
+    Mat hist_im(rows, cols, CV_8UC3);
+    for (int r = 0; r < rows; ++r)
+    {
+        for (int c = 0; c < cols; ++c)
+        {
+            int color = (int) (255.0 * float(histogram.bins[r*c+c]));
+            hist_im.at<Vec3b>(r,c) = Vec3b(color, color, color);
+        }
+    }
+    /*
+    Mat tmp;
+    pyrUp(hist_im, tmp, Size(hist_im.cols*2, hist_im.rows*2) );
+    pyrUp(tmp, tmp, Size(tmp.cols*2, tmp.rows*2) );
+    pyrUp(tmp, tmp, Size(tmp.cols*2, tmp.rows*2) );
+    pyrUp(tmp, tmp, Size(tmp.cols*2, tmp.rows*2) );
+    pyrUp(tmp, hist_im, Size(tmp.cols*2, tmp.rows*2) );
+     */
+    //imshow("histogram image", hist_im);
+    //waitKey(0);
+    //exit(0);
+    //imwrite("histogram image", hist_im);
+}
+
+
+void drawShapeContext(ShapeContext shape_context)
+{
+    std::stringstream imNum_sstream;
+    imNum_sstream << shape_context.im_id;
+    string imNumString = imNum_sstream.str();
+    string context_im_filename =
+        "hair_contexts/drawn/context_points_" + imNumString + ".jpg";
+    
+    int rows = int(shape_context.all_histograms.size());
+    int cols = HISTOGRAM_BINS_PER_POINT;
+    
+    cout << "rows: " << rows << ", cols: " << cols << endl;
+    
+    Mat context_im(rows, cols, CV_32FC1);
+    for (int r = 0; r < rows; ++r)
+    {
+        for (int c = 0; c < cols; ++c)
+        {
+            int color = 255 * shape_context.all_histograms[r].bins[c];
+            context_im.at<Vec3b>(r,c) = Vec3b(color);
+        }
+    }
+    
+    Mat big_context_im, tmp;
+    pyrUp(context_im, tmp, Size(context_im.cols*2, context_im.rows*2) );
+    pyrUp(tmp, tmp, Size(tmp.cols*2, tmp.rows*2) );
+    pyrUp(tmp, big_context_im, Size(tmp.cols*2, tmp.rows*2) );
+    //imshow(context_im_filename, big_context_im);
+    //waitKey(0);
+    imwrite(context_im_filename, big_context_im);
 }
 
 
@@ -348,7 +433,7 @@ EdgePoints getPointsOnEdges(Mat& contourIm, int imNum)
         }
     }
     
-    cout << "Points: " << xPoints.size() << endl;
+    //cout << "Points: " << xPoints.size() << endl;
     
     for (size_t i = 0; i < xPoints.size(); ++i)
     {
