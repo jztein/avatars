@@ -72,6 +72,7 @@ vector<EdgePoints> getLibraryInfo(const string& globby_dir_name)
 // TODO: add argument: const string& globby_dir_name
 void shapeContextsMain(struct Rough& rough, Mat original_im)
 {
+    /* PREPARE LIBRARY
     // Get edge points, filename, and index of file.
     vector<EdgePoints> library_info = getLibraryInfo(
         "/Users/kristen/Documents/2_Toonchat/artTeam/Hairs_screenshot/*");
@@ -83,11 +84,17 @@ void shapeContextsMain(struct Rough& rough, Mat original_im)
         shape_contexts.push_back(getShapeContext(info));
     }
     cout << "Finished getting " << shape_contexts.size() << " shape contexts." << endl;
-    exit(0);
+    
+    //*/
+    
+    // GET SHAPE CONTEXT OF INPUT IMAGE
+    Mat contourIm = getDetectedEdges(original_im);
+    EdgePoints input_edge_points = getPointsOnEdges(contourIm, 0);
+    ShapeContext input_shape_context = getShapeContext(input_edge_points);
 }
 
 
-ShapeContext getShapeContext(EdgePoints info)
+ShapeContext getShapeContext(EdgePoints info, string name)
 {
     ShapeContext shape_context;
     
@@ -185,7 +192,15 @@ ShapeContext getShapeContext(EdgePoints info)
     std::stringstream imNum_sstream;
     imNum_sstream << info.im_id;
     string imNum_str = imNum_sstream.str();
-    string context_filename = "hair_contexts/shape_contexts_" + imNum_str;// + ".txt";
+    string context_filename;
+    if (name.size() > 0)
+    {
+        context_filename = name;
+    }
+    else
+    {
+        context_filename = "hair_contexts/shape_contexts_" + imNum_str;
+    }
     shape_context.filename = context_filename;
     context_filename += ".txt";
     ofstream context_file(context_filename.c_str());
@@ -284,13 +299,21 @@ void drawHistogram(Histogram histogram)
 }
 
 
-void drawShapeContext(ShapeContext shape_context)
+void drawShapeContext(ShapeContext shape_context, string name)
 {
     std::stringstream imNum_sstream;
     imNum_sstream << shape_context.im_id;
     string imNumString = imNum_sstream.str();
-    string context_im_filename =
+    string context_im_filename;
+    if (name.size() > 0)
+    {
+        context_im_filename = name;
+    }
+    else
+    {
+        context_im_filename =
         "hair_contexts/drawn/context_points_" + imNumString + ".jpg";
+    }
     
     int rows = int(shape_context.all_histograms.size());
     int cols = HISTOGRAM_BINS_PER_POINT;
@@ -350,14 +373,32 @@ Mat getDetectedEdges(Mat src)
 
 
 // More or less from hairShape.cpp
-EdgePoints getPointsOnEdges(Mat& contourIm, int imNum)
+EdgePoints getPointsOnEdges(Mat& contourIm, int imNum, string points_name, string svg_name)
 {
     // SVG init.
     std::stringstream imNum_sstream;
     imNum_sstream << imNum;
     string imNumString = imNum_sstream.str();
-    string points_filename = "hair_points/context_points_" + imNumString + ".txt";
-    string svg_filename = "hair_svgs/SVG_HAIR_" + imNumString + ".html";
+    string points_filename;
+    if (points_name.size() > 0)
+    {
+        points_filename = points_name;
+    }
+    else
+    {
+        points_filename = "hair_points/context_points_" + imNumString + ".txt";
+    }
+    
+    string svg_filename;
+    if (svg_name.size() > 0)
+    {
+        svg_filename = svg_name;
+    }
+    else
+    {
+        svg_filename = "hair_svgs/SVG_HAIR_" + imNumString + ".html";
+    }
+    
     ofstream svgFile(svg_filename.c_str());
     ofstream points_file(points_filename.c_str());
     
@@ -416,6 +457,11 @@ EdgePoints getPointsOnEdges(Mat& contourIm, int imNum)
     // Do a scan to get points
     
     int scanFrequency = int(float(lowestY - highestY) / SCAN_FREQUENCY);
+    if (scanFrequency < 0)
+    {
+        scanFrequency = -scanFrequency;
+    }
+    
     for (int r = 0; r < contourIm.rows; r+=scanFrequency)
     {
         for (int c = 0; c < contourIm.cols; ++c)
@@ -433,7 +479,7 @@ EdgePoints getPointsOnEdges(Mat& contourIm, int imNum)
         }
     }
     
-    //cout << "Points: " << xPoints.size() << endl;
+    cout << "Points: " << xPoints.size() << endl;
     
     for (size_t i = 0; i < xPoints.size(); ++i)
     {
